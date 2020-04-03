@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  build 1.15.0:
+  build-1_15_0:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +26,7 @@ jobs:
     - name: Push the tagged Docker image
       run: docker push jloehel/tf-serving-custom:1.15.0
   
-  build latest release:
+  build_latest_release:
     runs-on: ubuntu-latest
     
     steps:
