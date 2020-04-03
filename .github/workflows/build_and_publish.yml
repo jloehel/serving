@@ -1,0 +1,58 @@
+name: Docker Image Release
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+
+  build 1.15.0:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: '1.15.0'
+    - name: Login to DockerHub Registry
+      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+    - name: Build the 1.15.0 devel image
+      run: docker build --target clean_build --build-arg TF_SERVING_VERSION_GIT_COMMIT="1.15.0" --build-arg TF_SERVING_BUILD_OPTIONS="--copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2" -t jloehel/tf-serving-custom:1.15.0-devel -f Dockerfile.devel .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the 1.15.0 devel image
+      run: docker push jloehel/tf-serving-custom:1.15.0-devel
+    - name: Build the 1.15.0 image
+      run: docker build --build-arg TF_SERVING_VERSION_GIT_COMMIT="1.15.0" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:1.15.0-devel" -t jloehel/tf-serving-custom:1.15.0 -f Dockerfile .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the tagged Docker image
+      run: docker push jloehel/tf-serving-custom:1.15.0
+  
+  build latest release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Login to DockerHub Registry
+      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+    - name: Get the version
+      id: vars
+      run: echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
+    - name: Build the tagged devel image
+      run: docker build --target clean_build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{steps.vars.outputs.tag}}" --build-arg TF_SERVING_BUILD_OPTIONS="--copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2" -t jloehel/tf-serving-custom:${{steps.vars.outputs.tag}}-devel -f Dockerfile.devel .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the tagged devel image
+      run: docker push jloehel/tf-serving-custom:${{steps.vars.outputs.tag}}-devel
+    - name: Build the latest devel image
+      run: docker build --target clean_build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{steps.vars.outputs.tag}}" --build-arg TF_SERVING_BUILD_OPTIONS="--copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2" -t jloehel/tf-serving-custom:latest-devel -f Dockerfile.devel .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the latest devel image
+      run: docker push jloehel/tf-serving-custom:latest-devel
+    - name: Build the tagged image
+      run: docker build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{steps.vars.outputs.tag}}" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:${{steps.vars.outputs.tag}}-devel" -t jloehel/tf-serving-custom:${{steps.vars.outputs.tag}} -f Dockerfile .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the tagged Docker image
+      run: docker push jloehel/tf-serving-custom:${{steps.vars.outputs.tag}}
+    - name: Build the latest Docker image
+      run: docker build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{steps.vars.outputs.tag}}" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:latest-devel" -t jloehel/tf-serving-custom:latest -f Dockerfile .
+      working-directory: ./tensorflow_serving/tools/docker/
+    - name: Push the latest Docker image
+      run: docker push jloehel/tf-serving-custom:latest
