@@ -17,9 +17,12 @@ jobs:
       with:
         owner: jloehel
         repo: serving
-    - uses: actions/checkout@v1
-      with:
-        ref: ${{ steps.latest_version.outputs.latest_tag }}
+    - name: Show latest release
+      env:
+        LATEST: ${{ steps.latest_version.outputs.latest_tag }}
+        LATEST_DATE: ${{ steps.latest_version.outputs.latest_tag_published_at }}
+      run: |
+        echo "Version $LATEST was released at $LATEST_DATE"
     - name: Login to DockerHub Registry
       run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
     - name: Build the tagged devel image
