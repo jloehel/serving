@@ -15,7 +15,7 @@ jobs:
       id: latest_version
       uses: abatilo/release-info-action@v1.1.0
       with:
-        owner: jloehel
+        owner: tensorflow
         repo: serving
     - name: Show latest release
       env:
@@ -23,25 +23,3 @@ jobs:
         LATEST_DATE: ${{ steps.latest_version.outputs.latest_tag_published_at }}
       run: |
         echo "Version $LATEST was released at $LATEST_DATE"
-    - name: Login to DockerHub Registry
-      run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-    - name: Build the tagged devel image
-      run: docker build --target clean_build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{ steps.latest_version.outputs.latest_tag }}" --build-arg TF_SERVING_BUILD_OPTIONS="--copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2" -t jloehel/tf-serving-custom:${{ steps.latest_version.outputs.latest_tag }}-devel -f Dockerfile.devel .
-      working-directory: ./tensorflow_serving/tools/docker/
-    - name: Push the tagged devel image
-      run: docker push jloehel/tf-serving-custom:${{ steps.latest_version.outputs.latest_tag }}-devel
-    - name: Build the latest devel image
-      run: docker build --target clean_build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{ steps.latest_version.outputs.latest_tag }}" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:${{ steps.latest_version.outputs.latest_tag }}-devel" -t jloehel/tf-serving-custom:latest-devel -f Dockerfile.devel .
-      working-directory: ./tensorflow_serving/tools/docker/
-    - name: Push the latest devel image
-      run: docker push jloehel/tf-serving-custom:latest-devel
-    - name: Build the tagged image
-      run: docker build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{ steps.latest_version.outputs.latest_tag }}" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:${{ steps.latest_version.outputs.latest_tag }}-devel" -t jloehel/tf-serving-custom:${{ steps.latest_version.outputs.latest_tag }} -f Dockerfile .
-      working-directory: ./tensorflow_serving/tools/docker/
-    - name: Push the tagged Docker image
-      run: docker push jloehel/tf-serving-custom:${{steps.vars.outputs.tag}}
-    - name: Build the latest Docker image
-      run: docker build --build-arg TF_SERVING_VERSION_GIT_COMMIT="${{ steps.latest_version.outputs.latest_tag }}" --build-arg TF_SERVING_BUILD_IMAGE="jloehel/tf-serving-custom:latest-devel" -t jloehel/tf-serving-custom:latest -f Dockerfile .
-      working-directory: ./tensorflow_serving/tools/docker/
-    - name: Push the latest Docker image
-      run: docker push jloehel/tf-serving-custom:latest
